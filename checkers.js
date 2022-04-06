@@ -18,7 +18,7 @@ To-Do:
   - Can add flag to pieces for drawing/moving
 */
 
-
+// added comment
 
 class CheckerPiece {
   constructor(x, y, p) {
