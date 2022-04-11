@@ -142,17 +142,70 @@ for (let i = 0; i < 4; i++) {
 function drawGame() {
   clearScreen();
   drawPieces();
+  drawAvailableMoves();
 }
 
-var mouseX, mouseY;
-var pieceToMove;
+// draw the base game board with no pieces on it
+function clearScreen() {
+  ctx.fillStyle = "#e6d5aa";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < 8; i++) {     // rows
+    for (let j = 0; j < 8; j++) {   // cols
+        if ((j + i) % 2 == 1) {
+            ctx.fillStyle = "#229c5d";
+            ctx.fillRect(j * CELLSIZE, i * CELLSIZE, CELLSIZE, CELLSIZE);
+        } // 229c5d
+    }     // 195D8B
+  }
+}
 
+// draw all of the pieces on the board
+function drawPieces() {
+  for (let i = 0; i < oppPieces.length; i++) {
+    oppPieces[i].draw();
+  }
+  for (let i = 0; i < myPieces.length; i++) {
+    myPieces[i].draw();
+  }
+}
+
+// if a piece is selected, highlight the spaces where it can be moved
+function drawAvailableMoves() {
+  if (pieceToMove != null) { // highlight available spaces for selected piece to move to
+    let spaces = findAvailableMoves(pieceToMove);
+    for (let i = 0; i < spaces.length; i++) {
+      let xy = spaces[i];
+      let x = xy[0];
+      let y = xy[1];
+      ctx.fillStyle = "#38cf9f";
+      ctx.fillRect(x * CELLSIZE, y * CELLSIZE, CELLSIZE, CELLSIZE);
+    }
+  }
+}
+
+
+var mouseX, mouseY; // the position of the mouse pointer on the web page
+var pieceToMove; // the CheckerPiece that is currently selected to be moved
+
+// read inputs whenever mouse click detected
+document.body.addEventListener("click", inputs);
+
+// find position of mouse relative to the board
+function findMousePos() {
+    document.onmousemove = function(e) {
+        var rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    }
+}
+
+// handles user input for the game
 function inputs() {
   // update positions
   findMousePos();
-  let x1 = Math.floor(mouseX / CELLSIZE);
-  let y1 = Math.floor(mouseY / CELLSIZE);
-  if (x1 >= 0 && x1 < 8 && y1 >= 0 && y1 < 8) {
+  let x1 = Math.floor(mouseX / CELLSIZE); // x-value of the cell clicked
+  let y1 = Math.floor(mouseY / CELLSIZE); // y-value of the cell clicked
+  if (x1 >= 0 && x1 < 8 && y1 >= 0 && y1 < 8) { // if user clicks on the board
     if (!move) {
       // select piece to be moved
       try {
@@ -196,53 +249,6 @@ function movePiece(pieceToMove, x1, y1) {
   }
 }
 
-// draw all of the pieces on the board
-function drawPieces() {
-  for (let i = 0; i < oppPieces.length; i++) {
-    oppPieces[i].draw();
-  }
-  for (let i = 0; i < myPieces.length; i++) {
-    myPieces[i].draw();
-  }
-}
-
-// draw the base game board with no pieces on it
-function clearScreen() {
-  ctx.fillStyle = "#e6d5aa";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  for (let i = 0; i < 8; i++) {     // rows
-    for (let j = 0; j < 8; j++) {   // cols
-        if ((j + i) % 2 == 1) {
-            ctx.fillStyle = "#229c5d";
-            ctx.fillRect(j * CELLSIZE, i * CELLSIZE, CELLSIZE, CELLSIZE);
-        } // 229c5d
-    }     // 195D8B
-  }
-  if (pieceToMove != null) { // highlight available spaces for selected piece to move to
-    let spaces = findAvailableMoves(pieceToMove);
-    for (let i = 0; i < spaces.length; i++) {
-      let xy = spaces[i];
-      let x = xy[0];
-      let y = xy[1];
-      // ctx.strokeStyle = "#d6c41c";
-      // ctx.strokeRect(x * CELLSIZE, y * CELLSIZE, CELLSIZE, CELLSIZE);
-      ctx.fillStyle = "#38cf9f";
-      ctx.fillRect(x * CELLSIZE, y * CELLSIZE, CELLSIZE, CELLSIZE);
-    }
-  }
-}
-
-// read inputs whenever mouse click detected
-document.body.addEventListener("click", inputs);
-
-// find position of mouse relative to canvas
-function findMousePos() {
-    document.onmousemove = function(e) {
-        var rect = canvas.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
-    }
-}
 
 // return the CheckerPiece at a specified (x, y) in a given list of pieces, throw error if no piece at location
 function findCheckerPieceAtPos(x, y, pieces) {
@@ -363,4 +369,6 @@ function checkGameOver() {
   } // else if no more moves available
 }
 
+
+// display the game
 drawGame();
