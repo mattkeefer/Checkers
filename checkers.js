@@ -23,6 +23,7 @@ class CheckerPiece {
       this.x = x; // x-coordinate (on board) - 0 = left column
       this.y = y; // y-coordinate (on board) - 0 = top row
       this.p = p; // false if opponent, true if player
+      this.king = false; // is this piece a king?
   }
 
   // draw this CheckerPiece on the screen
@@ -157,7 +158,6 @@ function inputs() {
       try {
         turn ? pieceToMove = findCheckerPieceAtPos(x1, y1, myPieces) : pieceToMove = findCheckerPieceAtPos(x1, y1, oppPieces);
         console.log("Select:", x1, y1);
-        //if (findAvailableMoves(pieceToMove).length == 0) throw "No moves available for this piece!"
         move = !move;
         drawGame();
       } catch (error) {
@@ -224,8 +224,10 @@ function clearScreen() {
       let xy = spaces[i];
       let x = xy[0];
       let y = xy[1];
-      ctx.strokeStyle = "#d6c41c";
-      ctx.strokeRect(x * CELLSIZE, y * CELLSIZE, CELLSIZE, CELLSIZE);
+      // ctx.strokeStyle = "#d6c41c";
+      // ctx.strokeRect(x * CELLSIZE, y * CELLSIZE, CELLSIZE, CELLSIZE);
+      ctx.fillStyle = "#38cf9f";
+      ctx.fillRect(x * CELLSIZE, y * CELLSIZE, CELLSIZE, CELLSIZE);
     }
   }
 }
@@ -346,18 +348,18 @@ function checkGameOver() {
     pieceToMove = null;
     console.log("LOSS");
     oppPieces.splice(0, oppPieces.length);
-    setTimeout(drawGame, 2000);
+    setTimeout(drawGame, 1000);
   } else if (oppPieces.length == 0) {
     pieceToMove = null;
     console.log("WIN");
     myPieces.splice(0, myPieces.length);
-    setTimeout(drawGame, 2000);
+    setTimeout(drawGame, 1000);
   } else if (tieCounter >= 100) {
     pieceToMove = null;
     console.log("100 moves without a capture: TIE") // else if no more moves available -> TIE
     oppPieces.splice(0, oppPieces.length);
     myPieces.splice(0, myPieces.length);
-    setTimeout(drawGame, 2000);
+    setTimeout(drawGame, 1000);
   } // else if no more moves available
 }
 
