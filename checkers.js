@@ -12,10 +12,10 @@ To-Do:
       - Can draw line showing the path of moves
     - Can make a flag on the piece determining whether or not user can deselect (easy, dirty fix)
 
-- Add game over functionality
+x Add game over functionality
 
 - Add in backwards moving pieces
-  - Can add flag to pieces for drawing/moving
+  x Can add flag to pieces for drawing/moving
 */
 
 class CheckerPiece {
@@ -39,6 +39,12 @@ class CheckerPiece {
         this.p ? ctx.strokeStyle = '#003300' : ctx.strokeStyle = '#4B0000';
         ctx.stroke();
       }
+      if (this.king) { // show that piece is a king
+        ctx.fillStyle = "#ebc334";
+        ctx.beginPath();
+        ctx.arc(CELLSIZE * this.x + CELLSIZE * 0.5, CELLSIZE * this.y + CELLSIZE * 0.5, CELLSIZE / 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
   }
 
   // move this CheckerPiece to the given (x, y) coordinates if move is valid, update board accordingly
@@ -56,18 +62,14 @@ class CheckerPiece {
           if (findAvailableJumps(this).length == 0) { // if no more jumps, toggle turn
             turn = !turn;
             pieceToMove = null;
-          } else {
-            move = !move;
-          }
+          } else { move = !move; }
         } else { // if normal move
           this.x = x;
           this.y = y;
           turn = !turn;
           pieceToMove = null;
         }
-      } else {
-        throw "Invalid move"
-      }
+      } else { throw "Invalid move"; }
 
     } else {
       if (validMove(this, x, y)) { // if move is valid
@@ -82,21 +84,26 @@ class CheckerPiece {
           if (findAvailableJumps(this).length == 0) { // if no more moves, toggle turn
             turn = !turn;
             pieceToMove = null;
-          } else {
-            move = !move;
-          }
+          } else { move = !move; }
         } else { // if normal move
           this.x = x;
           this.y = y;
           turn = !turn;
           pieceToMove = null;
         }
-      } else {
-        throw "Invalid move"
-      }
+      } else { throw "Invalid move"; }
     }
     move = !move; // move is over
     tieCounter++;
+    if (this.p) { // check if piece should become a king
+      if (this.y == 0) {
+        this.king = true;
+      }
+    } else {
+      if (this.y == 7) {
+        this.king = true;
+      }
+    }
   }
 }
 
