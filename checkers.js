@@ -4,18 +4,17 @@ To-Do:
   - Idea:
     - Can pass in a list of possible spaces to move to when moving a piece
     - Check if list is empty
-    - Once piece is selected, highlight possible moves in yellow
+    x Once piece is selected, highlight possible moves in yellow
 
-- Make it so player can deselect pieces before moving
+x Make it so player can deselect pieces before moving
   - Need to make it so player can't do this in the middle of a double jump
     - Can make it so user has to click to the final jump position               (involved, intuitive fix)
       - Can draw line showing the path of moves
     - Can make a flag on the piece determining whether or not user can deselect (easy, dirty fix)
 
 x Add game over functionality
+  - Need to tie if neither player can make a valid move
 
-- Add in backwards moving pieces
-  x Can add flag to pieces for drawing/moving
 */
 
 class CheckerPiece {
@@ -49,50 +48,32 @@ class CheckerPiece {
 
   // move this CheckerPiece to the given (x, y) coordinates if move is valid, update board accordingly
   movePiece(x, y) {
-    if (turn) {
-
-      if (validMove(this, x, y)) { // if move is valid
-        if (Math.abs(this.x - x) == 2) { // if jump
-          let target = findCheckerPieceAtPos(Math.abs(this.x + x) / 2, this.y - 1, oppPieces);
+    if (validMove(this, x, y)) { // if move is valid
+      if (Math.abs(this.x - x) == 2) { // if jump
+        if (turn) {
+          let target = findCheckerPieceAtPos((this.x + x) / 2, (this.y + y) / 2, oppPieces);
           let removeIndex = oppPieces.indexOf(target);
           oppPieces.splice(removeIndex, 1); // remove piece jumped over
-          // update position
-          this.x = x;
-          this.y = y;
-          if (findAvailableJumps(this).length == 0) { // if no more jumps, toggle turn
-            turn = !turn;
-            pieceToMove = null;
-          } else { move = !move; }
-        } else { // if normal move
-          this.x = x;
-          this.y = y;
-          turn = !turn;
-          pieceToMove = null;
-        }
-      } else { throw "Invalid move"; }
-
-    } else {
-      if (validMove(this, x, y)) { // if move is valid
-        if (Math.abs(this.x - x) == 2) { // if jump
-          let target = findCheckerPieceAtPos(Math.abs(this.x + x) / 2, this.y + 1, myPieces);
+        } else {
+          let target = findCheckerPieceAtPos((this.x + x) / 2, (this.y + y) / 2, myPieces);
           let removeIndex = myPieces.indexOf(target);
           myPieces.splice(removeIndex, 1); // remove piece jumped over
-          tieCounter = 0;
-          // update position
-          this.x = x;
-          this.y = y;
-          if (findAvailableJumps(this).length == 0) { // if no more moves, toggle turn
-            turn = !turn;
-            pieceToMove = null;
-          } else { move = !move; }
-        } else { // if normal move
-          this.x = x;
-          this.y = y;
+        }
+        tieCounter = 0;
+        // update position
+        this.x = x;
+        this.y = y;
+        if (findAvailableJumps(this).length == 0) { // if no more jumps, toggle turn
           turn = !turn;
           pieceToMove = null;
-        }
-      } else { throw "Invalid move"; }
-    }
+        } else { move = !move; }
+      } else { // if normal move
+        this.x = x;
+        this.y = y;
+        turn = !turn;
+        pieceToMove = null;
+      }
+    } else { throw "Invalid move"; }
     move = !move; // move is over
     tieCounter++;
     if (this.p) { // check if piece should become a king
@@ -103,7 +84,7 @@ class CheckerPiece {
       if (this.y == 7) {
         this.king = true;
       }
-    }
+    }    
   }
 }
 
@@ -208,37 +189,33 @@ function findMousePos() {
 
 // handles user input for the game
 function inputs() {
-  // update positions
-  findMousePos();
+  findMousePos(); // update positions
   let x1 = Math.floor(mouseX / CELLSIZE); // x-value of the cell clicked
   let y1 = Math.floor(mouseY / CELLSIZE); // y-value of the cell clicked
   if (x1 >= 0 && x1 < 8 && y1 >= 0 && y1 < 8) { // if user clicks on the board
-    if (!move) {
-      // select piece to be moved
+    if (!move) { // select piece to be moved
       try {
         turn ? pieceToMove = findCheckerPieceAtPos(x1, y1, myPieces) : pieceToMove = findCheckerPieceAtPos(x1, y1, oppPieces);
         console.log("Select:", x1, y1);
         move = !move;
         drawGame();
-      } catch (error) {
-        // selected piece/space not valid
+      } catch (error) { // selected piece/space not valid
         console.error(error);
       }
-    } else {
-      // move piece
+    } else { // move piece
       try {
-        if (turn) {
+        if (turn) { // deselect piece
           if (findCheckerPieceAtPos(x1, y1, myPieces) == pieceToMove) {
             pieceToMove = null;
             move = !move;
           }
-        } else {
+        } else { // deselect piece
           if (findCheckerPieceAtPos(x1, y1, oppPieces) == pieceToMove) {
             pieceToMove = null;
             move = !move;
           }
         }
-      } catch(error) {
+      } catch(error) { // move piece
         movePiece(pieceToMove, x1, y1);
       }
     }
@@ -249,11 +226,9 @@ function inputs() {
 
 function movePiece(pieceToMove, x1, y1) {
   try {
-    turn ? pieceToMove.movePiece(x1, y1) : pieceToMove.movePiece(x1, y1);
+    pieceToMove.movePiece(x1, y1);
     console.log("Move to:", x1, y1);
-  } catch (error) {
-    console.error(error);
-  }
+  } catch (error) { console.error(error); }
 }
 
 
@@ -285,10 +260,11 @@ function emptySpace(x, y) {
 // what tiles are open to jump to with this CheckerPiece?
 function findAvailableJumps(cp) {
   const spaces = [];
-  if (turn) {
+  if (turn || cp.king) {
     if (validMove(cp, cp.x - 2, cp.y - 2)) spaces.push([cp.x - 2, cp.y - 2]);
     if (validMove(cp, cp.x + 2, cp.y - 2)) spaces.push([cp.x + 2, cp.y - 2]);
-  } else {
+  }
+  if (!turn || cp.king) {
     if (validMove(cp, cp.x - 2, cp.y + 2)) spaces.push([cp.x - 2, cp.y + 2]);
     if (validMove(cp, cp.x + 2, cp.y + 2)) spaces.push([cp.x + 2, cp.y + 2]);
   }
@@ -298,12 +274,13 @@ function findAvailableJumps(cp) {
 // what tiles are open to move to with this CheckerPiece?
 function findAvailableMoves(cp) {
   const spaces = [];
-  if (turn) {
+  if (turn || cp.king) {
     if (validMove(cp, cp.x - 1, cp.y - 1)) spaces.push([cp.x - 1, cp.y - 1]);
     if (validMove(cp, cp.x + 1, cp.y - 1)) spaces.push([cp.x + 1, cp.y - 1]);
     if (validMove(cp, cp.x - 2, cp.y - 2)) spaces.push([cp.x - 2, cp.y - 2]);
     if (validMove(cp, cp.x + 2, cp.y - 2)) spaces.push([cp.x + 2, cp.y - 2]);
-  } else {
+  }
+  if (!turn || cp.king) {
     if (validMove(cp, cp.x - 1, cp.y + 1)) spaces.push([cp.x - 1, cp.y + 1]);
     if (validMove(cp, cp.x + 1, cp.y + 1)) spaces.push([cp.x + 1, cp.y + 1]);
     if (validMove(cp, cp.x - 2, cp.y + 2)) spaces.push([cp.x - 2, cp.y + 2]);
@@ -321,14 +298,39 @@ function validMove(cp, x, y) {
   if (!emptySpace(x, y)) return false;
 
   // is the spot a valid position from the selected piece?
-  if (turn) {
-    // moving up board (negative y direction)
-      if (Math.abs(cp.x - x) == 1 && cp.y - y == 1) { // one diagonal away
+  if (cp.king) {
+    if (Math.abs(cp.x - x) == 1 && Math.abs(cp.y - y) == 1) { return true; }
+    else if (Math.abs(cp.x - x) == 2 && Math.abs(cp.y - y) == 2) {
+      try {
+        if (turn) { let target = findCheckerPieceAtPos((cp.x + x) / 2, (cp.y + y) / 2, oppPieces); }
+        else { let target = findCheckerPieceAtPos((cp.x + x) / 2, (cp.y + y) / 2, myPieces); }
         return true;
-      } else if (Math.abs(cp.x - x) == 2 && cp.y - y == 2) { // two diagonals away
+      } catch (error) { return false; }
+    } else { return false; }
+  } else {
+    if (turn) {
+      // moving up board (negative y direction)
+        if (Math.abs(cp.x - x) == 1 && cp.y - y == 1) { // one diagonal away
+          return true;
+        } else if (Math.abs(cp.x - x) == 2 && cp.y - y == 2) { // two diagonals away
+          try {
+            // check if piece can be jumped over
+            let target = findCheckerPieceAtPos((cp.x + x) / 2, cp.y - 1, oppPieces);
+            return true;
+          } catch (error) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+    } else {
+      // moving down board (positive y direction)
+      if (Math.abs(cp.x - x) == 1 && y - cp.y == 1) { // one diagonal away
+        return true;
+      } else if (Math.abs(cp.x - x) == 2 && y - cp.y == 2) { // two diagonals away
         try {
           // check if piece can be jumped over
-          let target = findCheckerPieceAtPos(Math.abs(cp.x + x) / 2, cp.y - 1, oppPieces);
+          let target = findCheckerPieceAtPos((cp.x + x) / 2, cp.y + 1, myPieces);
           return true;
         } catch (error) {
           return false;
@@ -336,20 +338,6 @@ function validMove(cp, x, y) {
       } else {
         return false;
       }
-  } else {
-    // moving down board (positive y direction)
-    if (Math.abs(cp.x - x) == 1 && y - cp.y == 1) { // one diagonal away
-      return true;
-    } else if (Math.abs(cp.x - x) == 2 && y - cp.y == 2) { // two diagonals away
-      try {
-        // check if piece can be jumped over
-        let target = findCheckerPieceAtPos(Math.abs(cp.x + x) / 2, cp.y + 1, myPieces);
-        return true;
-      } catch (error) {
-        return false;
-      }
-    } else {
-      return false;
     }
   }
 }
