@@ -15,6 +15,17 @@ x Make it so player can deselect pieces before moving
 x Add game over functionality
   - Need to tie if neither player can make a valid move
 
+
+
+- Move functionality:
+  - On turn, highlight pieces available to move
+    - Piece is available to move if...
+      1) has an available move
+      2) if it has no available jumps, no other pieces have available jumps
+  - Once piece is selected, allow user to deselect by clicking on it again
+  - Highlight available moves for the selected piece
+    - If piece has available jump(s), do not let piece move 1 diagonal
+
 */
 
 class CheckerPiece {
@@ -48,43 +59,39 @@ class CheckerPiece {
 
   // move this CheckerPiece to the given (x, y) coordinates if move is valid, update board accordingly
   movePiece(x, y) {
-    if (validMove(this, x, y)) { // if move is valid
-      if (Math.abs(this.x - x) == 2) { // if jump
-        if (turn) {
-          let target = findCheckerPieceAtPos((this.x + x) / 2, (this.y + y) / 2, oppPieces);
-          let removeIndex = oppPieces.indexOf(target);
-          oppPieces.splice(removeIndex, 1); // remove piece jumped over
-        } else {
-          let target = findCheckerPieceAtPos((this.x + x) / 2, (this.y + y) / 2, myPieces);
-          let removeIndex = myPieces.indexOf(target);
-          myPieces.splice(removeIndex, 1); // remove piece jumped over
-        }
-        tieCounter = 0;
-        // update position
-        this.x = x;
-        this.y = y;
-        if (findAvailableJumps(this).length == 0) { // if no more jumps, toggle turn
-          turn = !turn;
-          pieceToMove = null;
-        } else { move = !move; }
-      } else { // if normal move
-        this.x = x;
-        this.y = y;
+    if (!validMove(this, x, y)) throw "Invalid move"; // ensure move is valid
+
+    if (Math.abs(this.x - x) == 2) { // if jump
+      if (turn) {
+        let target = findCheckerPieceAtPos((this.x + x) / 2, (this.y + y) / 2, oppPieces);
+        let removeIndex = oppPieces.indexOf(target);
+        oppPieces.splice(removeIndex, 1); // remove piece jumped over
+      } else {
+        let target = findCheckerPieceAtPos((this.x + x) / 2, (this.y + y) / 2, myPieces);
+        let removeIndex = myPieces.indexOf(target);
+        myPieces.splice(removeIndex, 1); // remove piece jumped over
+      }
+      tieCounter = 0;
+      // update position
+      this.x = x;
+      this.y = y;
+      if (findAvailableJumps(this).length == 0) { // if no more jumps, toggle turn
         turn = !turn;
         pieceToMove = null;
-      }
-    } else { throw "Invalid move"; }
+      } else { move = !move; } // if jump available, ensure player is still moving the piece
+    } else { // if normal move
+      this.x = x;
+      this.y = y;
+      turn = !turn;
+      pieceToMove = null;
+    }
     move = !move; // move is over
     tieCounter++;
     if (this.p) { // check if piece should become a king
-      if (this.y == 0) {
-        this.king = true;
-      }
+      if (this.y == 0) this.king = true;
     } else {
-      if (this.y == 7) {
-        this.king = true;
-      }
-    }    
+      if (this.y == 7) this.king = true;
+    }
   }
 }
 
@@ -357,11 +364,34 @@ function checkGameOver() {
     setTimeout(drawGame, 1000);
   } else if (tieCounter >= 100) {
     pieceToMove = null;
-    console.log("100 moves without a capture: TIE") // else if no more moves available -> TIE
+    console.log("100 moves without a capture: TIE")
     oppPieces.splice(0, oppPieces.length);
     myPieces.splice(0, myPieces.length);
     setTimeout(drawGame, 1000);
-  } // else if no more moves available
+  } else {
+    let noMoves = true;
+    for (let i = 0; i < myPieces.length; i++) {
+      if (findAvailableMoves(myPieces[i]).length > 0) {
+        noMoves = false;
+        break;
+      }
+    }
+    if (noMoves) {
+      for (let i = 0; i < oppPieces.length; i++) {
+        if (findAvailableMoves(oppPieces[i]).length > 0) {
+          noMoves = false;
+          break;
+        }
+      }
+    }
+    if (noMoves) {
+      pieceToMove = null;
+      console.log("No moves available: TIE") // else if no more moves available -> TIE
+      oppPieces.splice(0, oppPieces.length);
+      myPieces.splice(0, myPieces.length);
+      setTimeout(drawGame, 1000);
+    }
+  }
 }
 
 
