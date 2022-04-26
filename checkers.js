@@ -1,9 +1,9 @@
 /*
 To-Do:
-- Make it so double jumps are forced, not allowed to just move
+x Make it so jumps are forced, not allowed to just move
   - Idea:
-    - Can pass in a list of possible spaces to move to when moving a piece
-    - Check if list is empty
+    x Can pass in a list of possible spaces to move to when moving a piece
+    x Check if list is empty
     x Once piece is selected, highlight possible moves in yellow
 
 x Make it so player can deselect pieces before moving
@@ -13,7 +13,12 @@ x Make it so player can deselect pieces before moving
     - Can make a flag on the piece determining whether or not user can deselect (easy, dirty fix)
 
 x Add game over functionality
-  - Need to tie if neither player can make a valid move
+  x Need to tie if neither player can make a valid move
+  - Make it obvious what the result of the game is
+    - Win/loss/tie in big letters
+    - Change color of board
+
+- Allow user to reset game with "r"
 
 
 
@@ -59,7 +64,7 @@ class CheckerPiece {
 
   // move this CheckerPiece to the given (x, y) coordinates if move is valid, update board accordingly
   movePiece(x, y) {
-    if (!validMove(this, x, y)) throw "Invalid move"; // ensure move is valid
+    if (!findAvailableMoves(this).some(e => e[0] == x && e[1] == y)) throw "Invalid move!"; // ensures move is valid
 
     if (Math.abs(this.x - x) == 2) { // if jump
       if (turn) {
@@ -137,7 +142,7 @@ for (let i = 0; i < 4; i++) {
 function drawGame() {
   clearScreen();
   drawPieces();
-  drawAvailableMoves();
+  move ? drawAvailableMoves() : drawAvailablePieces();
 }
 
 // draw the base game board with no pieces on it
@@ -178,6 +183,21 @@ function drawAvailableMoves() {
   }
 }
 
+// highlight pieces available to move
+function drawAvailablePieces() {
+  let pieces;
+  turn ? pieces = findAvailablePieces(myPieces) : pieces = findAvailablePieces(oppPieces);
+  for (let i = 0; i < pieces.length; i++) {
+    let cp = pieces[i];
+    let x = cp.x;
+    let y = cp.y;
+    ctx.fillStyle = "#38cf9f";
+    ctx.beginPath();
+    ctx.arc(CELLSIZE * x + CELLSIZE * 0.5, CELLSIZE * y + CELLSIZE * 0.5, CELLSIZE / 8 - 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 
 var mouseX, mouseY; // the position of the mouse pointer on the web page
 var pieceToMove; // the CheckerPiece that is currently selected to be moved
@@ -196,31 +216,29 @@ function findMousePos() {
 
 // handles user input for the game
 function inputs() {
+  let pieces;
   findMousePos(); // update positions
   let x1 = Math.floor(mouseX / CELLSIZE); // x-value of the cell clicked
   let y1 = Math.floor(mouseY / CELLSIZE); // y-value of the cell clicked
   if (x1 >= 0 && x1 < 8 && y1 >= 0 && y1 < 8) { // if user clicks on the board
     if (!move) { // select piece to be moved
+      turn ? pieces = myPieces : pieces = oppPieces;
       try {
-        turn ? pieceToMove = findCheckerPieceAtPos(x1, y1, myPieces) : pieceToMove = findCheckerPieceAtPos(x1, y1, oppPieces);
-        console.log("Select:", x1, y1);
+        pieceToMove = findCheckerPieceAtPos(x1, y1, pieces);
+        if (!findAvailablePieces(pieces).includes(pieceToMove) && 1) throw "Cannot move this piece!";
+        console.log("Select: [", x1, ",", y1, "]");
         move = !move;
         drawGame();
       } catch (error) { // selected piece/space not valid
+        pieceToMove = null;
         console.error(error);
       }
     } else { // move piece
+      turn ? pieces = myPieces : pieces = oppPieces;
       try {
-        if (turn) { // deselect piece
-          if (findCheckerPieceAtPos(x1, y1, myPieces) == pieceToMove) {
-            pieceToMove = null;
-            move = !move;
-          }
-        } else { // deselect piece
-          if (findCheckerPieceAtPos(x1, y1, oppPieces) == pieceToMove) {
-            pieceToMove = null;
-            move = !move;
-          }
+        if (findCheckerPieceAtPos(x1, y1, pieces) == pieceToMove) { // deselect piece
+          pieceToMove = null;
+          move = !move;
         }
       } catch(error) { // move piece
         movePiece(pieceToMove, x1, y1);
@@ -234,7 +252,7 @@ function inputs() {
 function movePiece(pieceToMove, x1, y1) {
   try {
     pieceToMove.movePiece(x1, y1);
-    console.log("Move to:", x1, y1);
+    console.log("Move to: [", x1, ",", y1, "]");
   } catch (error) { console.error(error); }
 }
 
@@ -280,19 +298,18 @@ function findAvailableJumps(cp) {
 
 // what tiles are open to move to with this CheckerPiece?
 function findAvailableMoves(cp) {
-  const spaces = [];
+  let spaces = [];
+  if (findAvailableJumps(cp).length > 0) return findAvailableJumps(cp);
   if (turn || cp.king) {
     if (validMove(cp, cp.x - 1, cp.y - 1)) spaces.push([cp.x - 1, cp.y - 1]);
     if (validMove(cp, cp.x + 1, cp.y - 1)) spaces.push([cp.x + 1, cp.y - 1]);
-    if (validMove(cp, cp.x - 2, cp.y - 2)) spaces.push([cp.x - 2, cp.y - 2]);
-    if (validMove(cp, cp.x + 2, cp.y - 2)) spaces.push([cp.x + 2, cp.y - 2]);
   }
   if (!turn || cp.king) {
     if (validMove(cp, cp.x - 1, cp.y + 1)) spaces.push([cp.x - 1, cp.y + 1]);
     if (validMove(cp, cp.x + 1, cp.y + 1)) spaces.push([cp.x + 1, cp.y + 1]);
-    if (validMove(cp, cp.x - 2, cp.y + 2)) spaces.push([cp.x - 2, cp.y + 2]);
-    if (validMove(cp, cp.x + 2, cp.y + 2)) spaces.push([cp.x + 2, cp.y + 2]);
   }
+  let jumps = findAvailableJumps(cp);
+  spaces = spaces.concat(jumps);
   return spaces;
 }
 
@@ -347,6 +364,25 @@ function validMove(cp, x, y) {
       }
     }
   }
+}
+
+
+// find the pieces in the list that can be selected (have available move or must have available jump if one has a jump)
+function findAvailablePieces(pieces) {
+  const movePieces = [];
+  let jump = false;
+  // add pieces with available moves to list
+  for (let i = 0; i < pieces.length; i++) {
+    if (findAvailableMoves(pieces[i]).length > 0) movePieces.push(pieces[i]);
+    if (findAvailableJumps(pieces[i]).length > 0) jump = true;
+  }
+  // if one piece has jump, remove pieces from list that don't also have a jump
+  if (jump) {
+    for (let i = movePieces.length - 1; i >= 0; i--) {
+      if (findAvailableJumps(movePieces[i]).length == 0) movePieces.splice(i, 1);
+    }
+  }
+  return movePieces;
 }
 
 
