@@ -20,8 +20,6 @@ class CheckerPiece {
   // draw this CheckerPiece on the screen
   draw() {
       this.p ? ctx.fillStyle = "#135224" : ctx.fillStyle = "maroon";
-      // 135224 - green
-      // D8B94F - yellow
       ctx.beginPath();
       ctx.arc(CELLSIZE * this.x + CELLSIZE * 0.5, CELLSIZE * this.y + CELLSIZE * 0.5, CELLSIZE / 2 - 5, 0, Math.PI * 2);
       ctx.fill();
@@ -391,19 +389,19 @@ function checkGameOver() {
   if (myPieces.length == 0) {
     pieceToMove = null;
     console.log("LOSS");
-    oppPieces.splice(0, oppPieces.length);
-    setTimeout(drawGame, 1000);
+    // oppPieces.splice(0, oppPieces.length);
+    setTimeout(showLoss, 1000);
   } else if (oppPieces.length == 0) {
     pieceToMove = null;
     console.log("WIN");
-    myPieces.splice(0, myPieces.length);
-    setTimeout(drawGame, 1000);
+    // myPieces.splice(0, myPieces.length);
+    setTimeout(showWin, 1000);
   } else if (tieCounter >= 100) {
     pieceToMove = null;
     console.log("100 moves without a capture: TIE")
-    oppPieces.splice(0, oppPieces.length);
-    myPieces.splice(0, myPieces.length);
-    setTimeout(drawGame, 1000);
+    // oppPieces.splice(0, oppPieces.length);
+    // myPieces.splice(0, myPieces.length);
+    setTimeout(showTie, 1000);
   } else {
     let noMoves = true;
     for (let i = 0; i < myPieces.length; i++) {
@@ -423,11 +421,26 @@ function checkGameOver() {
     if (noMoves) {
       pieceToMove = null;
       console.log("No moves available: TIE") // else if no more moves available -> TIE
-      oppPieces.splice(0, oppPieces.length);
-      myPieces.splice(0, myPieces.length);
-      setTimeout(drawGame, 1000);
+      // oppPieces.splice(0, oppPieces.length);
+      // myPieces.splice(0, myPieces.length);
+      setTimeout(showTie, 1000);
     }
   }
+}
+
+function showWin() {
+  ctx.fillStyle = "#135224";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function showLoss() {
+  ctx.fillStyle = "maroon";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function showTie() {
+  ctx.fillStyle = "blue";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 
